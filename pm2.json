@@ -1,0 +1,40 @@
+{
+  "apps": [
+    {
+      "script": "build/src/app.js",
+      "instances": "1",
+      "exec_mode": "cluster",
+      "name": "energy-primary",
+      "instance_var": "INSTANCE_ID",
+      "watch": true,
+      "env_production": {
+        "name": "prod-energy-primary",
+        "PORT": 3333,
+        "NODE_ENV": "production"
+      },
+      "env_development": {
+        "name": "dev-energy-primary",
+        "PORT": 3334,
+        "NODE_ENV": "development"
+      }
+    },
+    {
+      "script": "build/src/app.js",
+      "instances": 3,
+      "exec_mode": "cluster",
+      "name": "energy-replica",
+      "instance_var": "INSTANCE_ID",
+      "watch": true,
+      "env_production": {
+        "name": "prod-energy-replica",
+        "PORT": 3333,
+        "NODE_ENV": "production"
+      },
+      "env_development": {
+        "name": "dev-energy-replica",
+        "PORT": 3334,
+        "NODE_ENV": "development"
+      }
+    }
+  ]
+}
