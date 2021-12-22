@@ -6,8 +6,8 @@
   "scripts": {
     "build": "tsc",
     "dev": "run-script-os",
-    "dev:win32": "SET NODE_ENV=development&&nodemon --exec ts-node --files src/app.ts",
-    "dev:darwin:linux": "export NODE_ENV=development&&nodemon --exec ts-node --files src/app.ts",
+    "dev:win32": "SET NODE_ENV=development&&SET name=primary&&nodemon --exec ts-node --files src/app.ts",
+    "dev:darwin:linux": "export NODE_ENV=development&&SET name=primary&&nodemon --exec ts-node --files src/app.ts",
     "dev-without-rollback": "run-script-os",
     "dev-without-rollback:win32": "SET NODE_ENV=development&&knex migrate:latest&&knex seed:run&&nodemon --exec ts-node --files src/app.ts",
     "dev-without-rollback:darwin:linux": "export NODE_ENV=development&&knex migrate:latest&&knex seed:run&&nodemon --exec ts-node --files src/app.ts",

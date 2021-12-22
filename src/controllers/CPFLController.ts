@@ -49,74 +49,6 @@ export default class CPFLController {
     return url
   }
 
-  private runBrowser = async () => {
-    const minimal_args = [
-      '--incognito',
-  
-      '--autoplay-policy=user-gesture-required',
-      '--disable-background-networking',
-      '--disable-background-timer-throttling',
-      '--disable-backgrounding-occluded-windows',
-      '--disable-breakpad',
-      '--disable-client-side-phishing-detection',
-      '--disable-component-update',
-      '--disable-default-apps',
-      '--disable-dev-shm-usage',
-      '--disable-domain-reliability',
-      '--disable-extensions',
-      '--disable-features=AudioServiceOutOfProcess',
-      '--disable-hang-monitor',
-      '--disable-ipc-flooding-protection',
-      '--disable-notifications',
-      '--disable-offer-store-unmasked-wallet-cards',
-      '--disable-popup-blocking',
-      '--disable-print-preview',
-      '--disable-prompt-on-repost',
-      '--disable-renderer-backgrounding',
-      '--disable-setuid-sandbox',
-      '--disable-speech-api',
-      '--disable-sync',
-      '--hide-scrollbars',
-      '--ignore-gpu-blacklist',
-      '--metrics-recording-only',
-      '--mute-audio',
-      '--no-default-browser-check',
-      '--no-first-run',
-      '--no-pings',
-      '--no-sandbox',
-      '--no-zygote',
-      '--password-store=basic',
-      '--use-gl=swiftshader',
-      '--use-mock-keychain',
-    ]
-  
-    const browser = await puppeteer.launch({ 
-      headless: false, 
-      args: minimal_args,
-      // userDataDir: false
-    })
-    
-    return browser
-  }
-
-  private closeBrowser = async (browser: puppeteer.Browser) => {
-    let chromeTmpDataDir: string = ''
-
-    let chromeSpawnArgs = browser.process()?.spawnargs
-
-    if (!!chromeSpawnArgs) {
-      for (let i = 0; i < chromeSpawnArgs.length; i++) {
-        if (chromeSpawnArgs[i].indexOf("--user-data-dir=") === 0) {
-            chromeTmpDataDir = chromeSpawnArgs[i].replace("--user-data-dir=", "");
-        }
-      }
-    }
-
-    await browser.close()
-
-    fs.rmSync(chromeTmpDataDir, { recursive: true, force: true })
-  }
-
   private sleep = (seconds: number) => {
     return new Promise(resolve => setTimeout(resolve, 1000 * seconds))
   }
@@ -231,6 +163,74 @@ export default class CPFLController {
     return data
   }
 
+  public runBrowser = async () => {
+    const minimal_args = [
+      '--incognito',
+  
+      '--autoplay-policy=user-gesture-required',
+      '--disable-background-networking',
+      '--disable-background-timer-throttling',
+      '--disable-backgrounding-occluded-windows',
+      '--disable-breakpad',
+      '--disable-client-side-phishing-detection',
+      '--disable-component-update',
+      '--disable-default-apps',
+      '--disable-dev-shm-usage',
+      '--disable-domain-reliability',
+      '--disable-extensions',
+      '--disable-features=AudioServiceOutOfProcess',
+      '--disable-hang-monitor',
+      '--disable-ipc-flooding-protection',
+      '--disable-notifications',
+      '--disable-offer-store-unmasked-wallet-cards',
+      '--disable-popup-blocking',
+      '--disable-print-preview',
+      '--disable-prompt-on-repost',
+      '--disable-renderer-backgrounding',
+      '--disable-setuid-sandbox',
+      '--disable-speech-api',
+      '--disable-sync',
+      '--hide-scrollbars',
+      '--ignore-gpu-blacklist',
+      '--metrics-recording-only',
+      '--mute-audio',
+      '--no-default-browser-check',
+      '--no-first-run',
+      '--no-pings',
+      '--no-sandbox',
+      '--no-zygote',
+      '--password-store=basic',
+      '--use-gl=swiftshader',
+      '--use-mock-keychain',
+    ]
+  
+    const browser = await puppeteer.launch({ 
+      headless: false, 
+      args: minimal_args,
+      // userDataDir: false
+    })
+    
+    return browser
+  }
+
+  public closeBrowser = async (browser: puppeteer.Browser) => {
+    let chromeTmpDataDir: string = ''
+
+    let chromeSpawnArgs = browser.process()?.spawnargs
+
+    if (!!chromeSpawnArgs) {
+      for (let i = 0; i < chromeSpawnArgs.length; i++) {
+        if (chromeSpawnArgs[i].indexOf("--user-data-dir=") === 0) {
+            chromeTmpDataDir = chromeSpawnArgs[i].replace("--user-data-dir=", "");
+        }
+      }
+    }
+
+    await browser.close()
+
+    fs.rmSync(chromeTmpDataDir, { recursive: true, force: true })
+  }
+
   public getCPFL = async (req: Request, res: Response) => {
     const url = this.makeURL(Number(this.getStateNumber('sp')))
 
@@ -257,5 +257,28 @@ export default class CPFLController {
       message: 'ok',
       data: dataFormatted
     })
+  }
+
+  public runCpflRoutine = async (state: string, city: string) => {
+    const url = this.makeURL(Number(this.getStateNumber(state)))
+
+    const browser = await this.runBrowser()
+    const page = await this.newPage(browser)
+
+    await page.goto(url, { waitUntil: 'load' })
+    
+    await this.selectToCity(page)
+
+    const cities = this.citiesToState(Number(this.getStateNumber('sp')))
+    if (!!cities) {
+      await this.searchWithCity(page, this.getCityCode(cities, city))
+    }
+
+    const result = await this.getData(page)
+    const dataFormatted = this.formatData(result)
+
+    console.log(dataFormatted)
+
+    this.closeBrowser(browser)
   }
 }
