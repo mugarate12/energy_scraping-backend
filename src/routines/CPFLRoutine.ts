@@ -13,7 +13,7 @@ async function routine() {
   console.log(`finalizando rotina da CPFL`)
 }
 
-export default async () => {
+export default () => {
   const initialRoutine = new CronJob.CronJob('0 0 * * *', async () => {
     await routine()
   })

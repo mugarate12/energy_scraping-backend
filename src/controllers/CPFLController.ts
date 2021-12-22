@@ -17,6 +17,11 @@ interface CPFLDataInterface {
   }>
 }
 
+interface getInterface {
+  state: string,
+  city: string
+}
+
 export default class CPFLController {
   private getStateNumber = (state: string) => {
     if (state === 'sp') {
@@ -163,6 +168,29 @@ export default class CPFLController {
     return data
   }
 
+  private get = async ({ state, city }: getInterface) => {
+    const url = this.makeURL(Number(this.getStateNumber(state)))
+
+    const browser = await this.runBrowser()
+    const page = await this.newPage(browser)
+
+    await page.goto(url, { waitUntil: 'load' })
+    
+    await this.selectToCity(page)
+
+    const cities = this.citiesToState(Number(this.getStateNumber(state)))
+    if (!!cities) {
+      await this.searchWithCity(page, this.getCityCode(cities, city))
+    }
+
+    const result = await this.getData(page)
+    const dataFormatted = this.formatData(result)
+
+    this.closeBrowser(browser)
+
+    return dataFormatted
+  }
+
   public runBrowser = async () => {
     const minimal_args = [
       '--incognito',
@@ -205,7 +233,7 @@ export default class CPFLController {
     ]
   
     const browser = await puppeteer.launch({ 
-      headless: false, 
+      headless: true, 
       args: minimal_args,
       // userDataDir: false
     })
@@ -232,26 +260,7 @@ export default class CPFLController {
   }
 
   public getCPFL = async (req: Request, res: Response) => {
-    const url = this.makeURL(Number(this.getStateNumber('sp')))
-
-    const browser = await this.runBrowser()
-    const page = await this.newPage(browser)
-
-    await page.goto(url, { waitUntil: 'load' })
-    
-    await this.selectToCity(page)
-
-    const cities = this.citiesToState(Number(this.getStateNumber('sp')))
-    if (!!cities) {
-      await this.searchWithCity(page, this.getCityCode(cities, 'Araraquara'))
-    }
-
-    const result = await this.getData(page)
-    const dataFormatted = this.formatData(result)
-
-    console.log(dataFormatted)
-
-    this.closeBrowser(browser)
+    const dataFormatted = this.get({ state: 'sp', city: 'Araraquara' })
 
     return res.status(200).json({
       message: 'ok',
@@ -260,25 +269,6 @@ export default class CPFLController {
   }
 
   public runCpflRoutine = async (state: string, city: string) => {
-    const url = this.makeURL(Number(this.getStateNumber(state)))
-
-    const browser = await this.runBrowser()
-    const page = await this.newPage(browser)
-
-    await page.goto(url, { waitUntil: 'load' })
-    
-    await this.selectToCity(page)
-
-    const cities = this.citiesToState(Number(this.getStateNumber('sp')))
-    if (!!cities) {
-      await this.searchWithCity(page, this.getCityCode(cities, city))
-    }
-
-    const result = await this.getData(page)
-    const dataFormatted = this.formatData(result)
-
-    console.log(dataFormatted)
-
-    this.closeBrowser(browser)
+    const dataFormatted = this.get({ state: state, city: city })
   }
 }
