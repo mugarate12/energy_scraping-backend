@@ -260,7 +260,7 @@ export default class CPFLController {
   }
 
   public getCPFL = async (req: Request, res: Response) => {
-    const dataFormatted = this.get({ state: 'sp', city: 'Araraquara' })
+    const dataFormatted = await this.get({ state: 'sp', city: 'Araraquara' })
 
     return res.status(200).json({
       message: 'ok',
@@ -269,6 +269,6 @@ export default class CPFLController {
   }
 
   public runCpflRoutine = async (state: string, city: string) => {
-    const dataFormatted = this.get({ state: state, city: city })
+    const dataFormatted = await this.get({ state: state, city: city })
   }
 }
