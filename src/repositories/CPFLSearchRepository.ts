@@ -19,10 +19,15 @@ interface createCPFLSearchInterface {
   city: string
 }
 
+interface indexCPFLSearchInterface {
+  able?: number
+}
+
 interface getCPFLSearchInterface {
   id?: number,
   state?: string,
-  city?: string
+  city?: string,
+  able?: number
 }
 
 interface updateCPFLSearchInterface {
@@ -52,8 +57,14 @@ export default class CPFLSearchRepository {
       })
   }
 
-  public index = async () => {
-    return await this.reference()
+  public index = async ({ able }: indexCPFLSearchInterface) => {
+    let query = this.reference()
+
+    if (!!able) {
+      query = query.where('able', '=', able)
+    }
+
+    return await query
       .select('*')
       .then(searchs => searchs)
       .catch(error => {
@@ -61,7 +72,7 @@ export default class CPFLSearchRepository {
       })
   }
 
-  public get = async ({ id, state, city }: getCPFLSearchInterface) => {
+  public get = async ({ id, state, city, able }: getCPFLSearchInterface) => {
     let query = this.reference()
 
     if (!!id) {
@@ -74,6 +85,10 @@ export default class CPFLSearchRepository {
 
     if (!!city) {
       query = query.where('city', '=', city)
+    }
+
+    if (!!able) {
+      query = query.where('able', '=', able)
     }
 
     return await query

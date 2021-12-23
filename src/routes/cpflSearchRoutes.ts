@@ -4,7 +4,7 @@ import { Router } from 'express'
 import { cpflSearchController } from './../controllers'
 
 function cpflSearchRoutes(routes: Router) {
-  routes.post('/service/cpf', celebrate({
+  routes.post('/service/cpfl', celebrate({
     [Segments.BODY]: Joi.object().keys({
       state: Joi.string().required(),
       city: Joi.string().required()

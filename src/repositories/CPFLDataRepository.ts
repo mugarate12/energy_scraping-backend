@@ -45,6 +45,17 @@ interface createCPFLDataInterface {
   final_maintenance: number
 }
 
+interface indexCPFLDataInterface {
+  state?: string,
+  city?: string,
+  district?: string,
+  street?: string,
+
+  date?: string,
+
+  status?: number
+}
+
 interface getCPFLDataInterface {
   state: string,
   city: string,
@@ -52,6 +63,8 @@ interface getCPFLDataInterface {
   street: string,
 
   date: string,
+
+  status?: number
 }
 
 interface updateCPFLDataInterface {
@@ -79,9 +92,33 @@ export default class CPFLDataRepository {
       })
   }
 
-  public get = async ({ state, city, district, street, date }: getCPFLDataInterface) => {
-    return await this.reference()
+  public index = async ({ state, city, street, district, date, status }: indexCPFLDataInterface) => {
+    let query = this.reference()
+
+    if (!!state) query = query.where('state', '=', state)
+    if (!!city) query = query.where('city', '=', city)
+    if (!!district) query = query.where('district', '=', district)
+    if (!!street) query = query.where('street', '=', street)
+    if (!!date) query = query.where('date', '=', date)
+    if (!!status) query = query.where('status', '=', status)
+
+    return query
+      .select('*')
+      .then(cpflDatas => cpflDatas)
+      .catch(error => {
+        throw new AppError('Database Error', 406, error.message, true)
+      })
+  }
+
+  public get = async ({ state, city, district, street, date, status }: getCPFLDataInterface) => {
+    let query = this.reference()
       .where({ state, city, district, street, date })
+
+    if (!!status) {
+      query = query.where('status', '=', status)
+    }
+
+    return await query
       .select('*')
       .first()
       .then(cpflData => cpflData)

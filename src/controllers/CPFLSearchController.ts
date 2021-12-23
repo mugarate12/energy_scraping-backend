@@ -25,7 +25,7 @@ export default class CPFLSearchController {
   }
 
   public index = async (req: Request, res: Response) => {
-    return await cpflSearchRepository.index()
+    return await cpflSearchRepository.index({})
       .then((searches) => {
         return res.status(200).json({
           messae: 'serviços recuperados com sucesso!',

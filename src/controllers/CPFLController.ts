@@ -37,6 +37,11 @@ interface updateCPFLDataInterface {
   city: string
 }
 
+interface updateCPFLTimeInterface {
+  state: string,
+  city: string
+}
+
 interface getInterface {
   state: string,
   city: string
@@ -277,6 +282,17 @@ export default class CPFLController {
     return status
   }
 
+  private convertStatusStringToNumber = (status: 'waiting' | 'maintenence' | 'finished') => {
+    switch (status) {
+      case 'waiting':
+        return 2
+      case 'maintenence':
+        return 3
+      default:
+        return 4
+    }
+  }
+
   private updateCPFLData = async ({ data, state, city }: updateCPFLDataInterface) => {
     const duration = this.getDuration(
       this.formatDateToGetDuration(data.date, data.initialHour),
@@ -313,14 +329,16 @@ export default class CPFLController {
 
         const haveRegistry =  !!cpflData
         if (haveRegistry) {
-          await cpflDataRepository.update({
-            identifiers: { id: cpflData.id },
-            payload: {
-              final_maintenance: finalMaintenance,
-              final_seconds: finalSeconds,
-              status
-            }
-          })
+          if (cpflData.status !== this.convertStatusStringToNumber('finished')) {
+            await cpflDataRepository.update({
+              identifiers: { id: cpflData.id },
+              payload: {
+                final_maintenance: finalMaintenance,
+                final_seconds: finalSeconds,
+                status
+              }
+            })
+          }
         } else {
           await cpflDataRepository.create({
             state,
@@ -340,6 +358,41 @@ export default class CPFLController {
             final_seconds: finalSeconds,
           })
         }
+      }
+    }
+  }
+
+  private updateTime = async ({ state, city }: updateCPFLTimeInterface) => {
+    const CPFLDataOfStateAndCity = await cpflDataRepository.index({
+      state,
+      city
+    })
+
+    for (let index = 0; index < CPFLDataOfStateAndCity.length; index++) {
+      const cpflData = CPFLDataOfStateAndCity[index]
+      
+      if (cpflData.status !== this.convertStatusStringToNumber('finished')) {
+        const actualDate = moment().format('DD/MM/YYYY HH:mm')
+
+        const finalSeconds = this.getDurationInSeconds(
+          this.formatDateToGetDuration(actualDate.split(' ')[0], actualDate.split(' ')[1]),
+          this.formatDateToGetDuration(cpflData.date, cpflData.initial_hour.split(' ')[2])
+        )
+        const finalMaintenance = this.getDurationInSeconds(
+          this.formatDateToGetDuration(actualDate.split(' ')[0], actualDate.split(' ')[1]),
+          this.formatDateToGetDuration(cpflData.date, cpflData.final_hour.split(' ')[2])
+        )
+
+        const status = this.getStatus(finalSeconds, finalMaintenance)
+
+        await cpflDataRepository.update({
+          identifiers: { id: cpflData.id },
+          payload: {
+            final_maintenance: finalMaintenance,
+            final_seconds: finalSeconds,
+            status
+          }
+        })
       }
     }
   }
@@ -429,5 +482,14 @@ export default class CPFLController {
 
   public runCpflRoutine = async (state: string, city: string) => {
     const dataFormatted = await this.get({ state: state, city: city })
+    
+    const requests = dataFormatted.map(async (data) => {
+      await this.updateCPFLData({ data, state: 'sp', city: 'Araraquara' })
+    })
+    await Promise.all(requests)
+  }
+
+  public runUpdateTimeRoutine = async (state: string, city: string) => {
+    await this.updateTime({ state, city })
   }
 }
