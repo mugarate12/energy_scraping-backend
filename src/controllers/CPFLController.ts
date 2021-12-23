@@ -3,6 +3,10 @@ import puppeteer from 'puppeteer'
 import fs from 'fs'
 import moment from 'moment'
 
+import {
+  cpflDataRepository
+} from './../repositories'
+
 type citiesInterface = Array<{
   value: string;
   label: string;
@@ -15,6 +19,22 @@ interface CPFLDataInterface {
     bairro: string,
     ruas: Array<string>
   }>
+}
+
+interface CPFLFormattedDataInterface {
+  date: string,
+  contents: Array<{
+    bairro: string,
+    ruas: Array<string>
+  }>,
+  initialHour: string,
+  finalHour: string
+}
+
+interface updateCPFLDataInterface {
+  data: CPFLFormattedDataInterface,
+  state: string,
+  city: string
 }
 
 interface getInterface {
@@ -157,12 +177,15 @@ export default class CPFLController {
   private formatData = (cpflDataArray: Array<CPFLDataInterface>) => {
     const data = cpflDataArray.map((cpflData) => {
       const hours = cpflData.hour.split(' ')
-      return {
+
+      const cpflFormattedData: CPFLFormattedDataInterface = {
         date: cpflData.date,
         contents: cpflData.contents,
         initialHour: hours[0],
         finalHour: hours[2]
       }
+
+      return cpflFormattedData
     })
 
     return data
@@ -189,6 +212,136 @@ export default class CPFLController {
     this.closeBrowser(browser)
 
     return dataFormatted
+  }
+
+  /**
+   * format date to 'month/day/year'
+   * @param  {String} hour have format 'day/month/year hour:minutes'
+   */
+  private formatDateToGetDuration = (date: string, hour: string) => {
+    const dateSplitted = date.split('/')
+    const dateFormatted = `${dateSplitted[1]}-${dateSplitted[0]}-${dateSplitted[2]}`
+
+    return `${dateFormatted} ${hour}`
+  }
+
+  /**
+   * get difference in format 'hour:minutes' to initialHour and finalHour
+   * @param  {String} initialHour have format 'month/day/year hour:minutes'
+   * @param  {String} finalHour have format 'month/day/year hour:minutes'
+   */
+  private getDuration = (initialHour: string, finalHour: string) => {
+    const initial = moment(initialHour)
+    const final = moment(finalHour)
+
+    const duration = moment.duration(final.diff(initial))
+    const durationFormatted = `${duration.hours()}:${duration.minutes()}`
+    
+    return durationFormatted
+  }
+
+  /**
+   * get difference in format 'hour:minutes' to initialHour and finalHour
+   * @param  {String} initialHour have format 'month/day/year hour:minutes'
+   * @param  {String} finalHour have format 'month/day/year hour:minutes'
+   */
+  private getDurationInSeconds = (initialHour: string, finalHour: string) => {
+    const initial = moment(initialHour)
+    const final = moment(finalHour)
+
+    const duration = moment.duration(final.diff(initial))
+    const durationInSeconds = duration.asSeconds()
+
+    return durationInSeconds
+  }
+
+  /**
+   * status is a number to describe:
+   * 2 = em agendamento
+   * 3 = manutenção em andamento
+   * 4 = manutenção finalizada
+   * @param  {number} finalSeconds is a number is seconds to actual time at time to maintenence
+   * @param  {number} finalMaintenence is a number is seconds to actual time at time to final of maintenence
+   */
+  private getStatus = (finalSeconds: number, finalMaintenence: number) => {
+    let status = 2
+
+    if (finalSeconds <= 0 && finalMaintenence > 0) {
+      status = 3
+    }
+
+    if (finalSeconds <= 0 && finalMaintenence <= 0) {
+      status = 4
+    }
+
+    return status
+  }
+
+  private updateCPFLData = async ({ data, state, city }: updateCPFLDataInterface) => {
+    const duration = this.getDuration(
+      this.formatDateToGetDuration(data.date, data.initialHour),
+      this.formatDateToGetDuration(data.date, data.finalHour)
+    )
+
+    const actualDate = moment().format('DD/MM/YYYY HH:mm')
+
+    const finalSeconds = this.getDurationInSeconds(
+      this.formatDateToGetDuration(actualDate.split(' ')[0], actualDate.split(' ')[1]),
+      this.formatDateToGetDuration(data.date, data.initialHour)
+    )
+    const finalMaintenance = this.getDurationInSeconds(
+      this.formatDateToGetDuration(actualDate.split(' ')[0], actualDate.split(' ')[1]),
+      this.formatDateToGetDuration(data.date, data.finalHour)
+    )
+
+    const status = this.getStatus(finalSeconds, finalMaintenance)
+
+    for (let index = 0; index < data.contents.length; index++) {
+      const content = data.contents[index]
+
+      for (let index = 0; index < content.ruas.length; index++) {
+        const street = content.ruas[index]
+        
+        const cpflData = await cpflDataRepository.get({
+          state,
+          city,
+          district: content.bairro,
+          street: street,
+
+          date: data.date
+        })
+
+        const haveRegistry =  !!cpflData
+        if (haveRegistry) {
+          await cpflDataRepository.update({
+            identifiers: { id: cpflData.id },
+            payload: {
+              final_maintenance: finalMaintenance,
+              final_seconds: finalSeconds,
+              status
+            }
+          })
+        } else {
+          await cpflDataRepository.create({
+            state,
+            city,
+            district: content.bairro,
+            street: street,
+
+            date: data.date,
+
+            status,
+            
+            initial_hour: `${data.date} - ${data.initialHour}`,
+            final_hour: `${data.date} - ${data.finalHour}`,
+            duration: duration,
+
+            final_maintenance: finalMaintenance,
+            final_seconds: finalSeconds,
+          })
+        }
+      }
+    }
   }
 
   public runBrowser = async () => {
@@ -235,6 +388,7 @@ export default class CPFLController {
     const browser = await puppeteer.launch({ 
       headless: true, 
       args: minimal_args,
+      slowMo: 200
       // userDataDir: false
     })
     
@@ -261,6 +415,11 @@ export default class CPFLController {
 
   public getCPFL = async (req: Request, res: Response) => {
     const dataFormatted = await this.get({ state: 'sp', city: 'Araraquara' })
+
+    const requests = dataFormatted.map(async (data) => {
+      await this.updateCPFLData({ data, state: 'sp', city: 'Araraquara' })
+    })
+    await Promise.all(requests)
 
     return res.status(200).json({
       message: 'ok',
