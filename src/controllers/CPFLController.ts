@@ -119,8 +119,9 @@ export default class CPFLController {
 
   private getData = async (page: puppeteer.Page) => {
     // let r: CPFLDataInterface = []
+    let result: Array<CPFLDataInterface> = []
 
-    let result: Array<CPFLDataInterface> = await page.evaluate(() => {
+    result = await page.evaluate(() => {
       let r = [{}]
       let classes = document.getElementsByClassName('consulta__listagem__resultados__timeline')
 
@@ -175,6 +176,9 @@ export default class CPFLController {
         }
       })
     })
+      .catch(error => {
+        return []
+      })
     
     return result
   }
@@ -294,7 +298,7 @@ export default class CPFLController {
   }
 
   private updateCPFLData = async ({ data, state, city }: updateCPFLDataInterface) => {
-    const duration = this.getDuration(
+    const duration = this.getDurationInSeconds(
       this.formatDateToGetDuration(data.date, data.initialHour),
       this.formatDateToGetDuration(data.date, data.finalHour)
     )

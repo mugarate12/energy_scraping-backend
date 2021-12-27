@@ -6,6 +6,7 @@
       "exec_mode": "cluster",
       "name": "energy-primary",
       "instance_var": "INSTANCE_ID",
+      "cron_restart": "0 0 * * *",
       "watch": true,
       "env_production": {
         "name": "prod-energy-primary",

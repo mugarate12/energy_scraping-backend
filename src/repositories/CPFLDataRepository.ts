@@ -21,8 +21,8 @@ interface CPFLDataInterface {
 
   initial_hour: string,
   final_hour: string,
-  duration: string,
-
+  
+  duration: number,
   final_seconds: number,
   final_maintenance: number
 }
@@ -39,8 +39,8 @@ interface createCPFLDataInterface {
   
   initial_hour: string,
   final_hour: string,
-  duration: string,
-
+  
+  duration: number,
   final_seconds: number,
   final_maintenance: number
 }

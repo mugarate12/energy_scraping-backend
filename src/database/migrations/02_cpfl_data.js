@@ -17,8 +17,8 @@ exports.up = function(knex) {
 
     table.string('initial_hour').notNullable()
     table.string('final_hour').notNullable()
-    table.string('duration').notNullable()
-
+    
+    table.integer('duration').notNullable()
     table.integer('final_seconds').notNullable()
     table.integer('final_maintenance').notNullable()
   })
