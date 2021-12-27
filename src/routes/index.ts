@@ -9,4 +9,8 @@ const routes = Router()
 cpflRoutes(routes)
 cpflSearchRoutes(routes)
 
+routes.get(`/`, async (req, res) => {
+  return res.status(200).json({ message: 'API funcionando!' })
+})
+
 export default routes
