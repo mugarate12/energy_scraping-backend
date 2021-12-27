@@ -13,7 +13,7 @@
     "dev-without-rollback:darwin:linux": "export NODE_ENV=development&&knex migrate:latest&&knex seed:run&&nodemon --exec ts-node --files src/app.ts",
     "start": "run-script-os",
     "start:win32": "SET NODE_ENV=production&&pm2 start pm2.json",
-    "start:darwin:linux": "export NODE_ENV=production&&knex migrate:latest&&knex seed:run&&pm2 start pm2.json",
+    "start:darwin:linux": "export NODE_ENV=production&&knex migrate:up 01_cpfl_search.js&&knex migrate:up 02_cpfl_data.js&&pm2 start pm2.json",
     "show-logs": "pm2 logs --lines 1000",
     "clear-logs": "pm2 flush",
     "production": "npm run build&&pm2 flush&&npm start",
