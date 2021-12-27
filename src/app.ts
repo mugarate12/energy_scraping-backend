@@ -34,5 +34,10 @@ routines()
 const PORT = !process.env.PORT ? 3335 :  process.env.PORT
 
 server.listen(PORT, () => {
-  console.log(`listening on port ${PORT} at ${server.address()}`)
+  const addressObject = server.address()
+  if (typeof addressObject !== 'string' && addressObject !== null) {
+    console.log(`listening at ${addressObject.address}, ${addressObject.port}`)
+  }
+
+  console.log(`listening on port ${PORT}`)
 })
