@@ -10,12 +10,12 @@
       "watch": true,
       "env_production": {
         "name": "prod-energy-primary",
-        "PORT": 3333,
+        "PORT": 3335,
         "NODE_ENV": "production"
       },
       "env_development": {
         "name": "dev-energy-primary",
-        "PORT": 3334,
+        "PORT": 3336,
         "NODE_ENV": "development"
       }
     },
@@ -28,12 +28,12 @@
       "watch": true,
       "env_production": {
         "name": "prod-energy-replica",
-        "PORT": 3333,
+        "PORT": 3335,
         "NODE_ENV": "production"
       },
       "env_development": {
         "name": "dev-energy-replica",
-        "PORT": 3334,
+        "PORT": 3336,
         "NODE_ENV": "development"
       }
     }

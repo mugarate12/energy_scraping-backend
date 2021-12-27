@@ -31,7 +31,7 @@ app.use(errors())
 // run routines
 routines()
 
-const PORT = !process.env.PORT ? 3333 :  process.env.PORT
+const PORT = !process.env.PORT ? 3335 :  process.env.PORT
 
 server.listen(PORT, () => {
   console.log(`listening on port ${PORT}`)
