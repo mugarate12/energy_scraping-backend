@@ -24,11 +24,7 @@ function cleanTemporaryFiles() {
 }
 
 export default () => {
-  const initialRoutine = new CronJob.CronJob('0 1 * * *', cleanTemporaryFiles)
-  const nineAmRoutine = new CronJob.CronJob('0 11 * * *', cleanTemporaryFiles)
-  const sevenPmRoutine = new CronJob.CronJob('0 19 * * *', cleanTemporaryFiles)
+  const cleanRoutine = new CronJob.CronJob('10 * * * *', cleanTemporaryFiles)
 
-  initialRoutine.start()
-  nineAmRoutine.start()
-  sevenPmRoutine.start()
+  cleanRoutine.start()
 }
