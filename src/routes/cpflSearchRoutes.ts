@@ -1,7 +1,7 @@
 import { celebrate, Joi, Segments } from 'celebrate'
 import { Router } from 'express'
 
-import { cpflSearchController } from './../controllers'
+import {  cpflController, cpflSearchController } from './../controllers'
 
 function cpflSearchRoutes(routes: Router) {
   routes.post('/service/cpfl', celebrate({
@@ -27,6 +27,9 @@ function cpflSearchRoutes(routes: Router) {
       id: Joi.number().required()
     })
   }), cpflSearchController.delete)
+
+  routes.get('/service/cpfl/states', cpflController.getStatesRequest)
+  routes.get('/service/cpfl/states/:state/cities', cpflController.getCitiesRequest)
 }
 
 export default cpflSearchRoutes
